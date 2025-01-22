@@ -22,6 +22,8 @@
 
 #include <DMotor.h>
 #include <ASMotor.h>
+#include <string>
+#include <JsonParser.h>
 
 namespace Device
 {
@@ -56,6 +58,7 @@ DMotor::DMotor (
     /* fill up constructor initialization list here */
 {
     /* fill up constructor body here */
+       LOG(Log::INF) << config.name() << " motor created with identifier " << config.identifier() << std::endl;
 }
 
 /* sample dtr */
@@ -65,9 +68,43 @@ DMotor::~DMotor ()
 
 /* delegates for cachevariables */
 
+/* Note: never directly call this function. */
+
+UaStatus DMotor::writeRotationalSpeedSetPoint ( const OpcUa_Double& v)
+{
+    if (v > 1000 || v < 0)
+        return OpcUa_BadOutOfRange;
+ 
+    return OpcUa_Good;
+}
 
 
 /* delegators for methods */
+UaStatus DMotor::callSendJson (
+    const UaString&  jsonContent,
+    OpcUa_Boolean& returCode
+)
+{
+    
+    JsonParser::JsonParser parser;
+    std::string jsonContentStr(jsonContent.toUtf8());
+    LOG(Log::INF) << "Motor Id "<< identifier() << ", " << "Json content = " << jsonContentStr <<std::endl;
+    
+    ParsedData parsesData = parser.parseString(jsonContentStr);
+    LOG(Log::INF) << "Motor Id "<< identifier() << ", " << "BaseNode = " << parsesData.baseNode <<std::endl;
+    bool jsonIsValid = true; // TODO: implement json validation
+    if (jsonIsValid)
+    {
+        returCode = OpcUa_True;
+        getAddressSpaceLink()->setRotationalSpeedSetPoint(12);
+        return OpcUa_Good;
+    }
+    else
+    {
+        returCode = OpcUa_False;
+        return OpcUa_BadNotImplemented;
+    }
+}
 
 // 3333333333333333333333333333333333333333333333333333333333333333333333333
 // 3     FULLY CUSTOM CODE STARTS HERE                                     3
@@ -77,7 +114,21 @@ DMotor::~DMotor ()
 
 void DMotor::update()
 {
-    getAddressSpaceLink()->setRotationalSpeed(rand(), OpcUa_Good);
+
+    // Use Fake rand but it real project hear we connect to hardware to get information
+    AddressSpace::ASMotor* as = getAddressSpaceLink();
+
+    // From the server to the clients (clients have to subscibe or use a read service)
+    as->setRotationalSpeed(rand(), OpcUa_Good);
+
+    OpcUa_Double speedSetPoint = 0.;
+    UaStatus status = as->getRotationalSpeedSetPoint(speedSetPoint);
+    
+    speedSetPoint = as->getRotationalSpeedSetPoint();
+    LOG(Log::INF) << "Motor Id "<< identifier() << ", " << "RotationalSpeedSetPoint for motor = " << speedSetPoint <<std::endl;
+
+
+
 }
 
 }

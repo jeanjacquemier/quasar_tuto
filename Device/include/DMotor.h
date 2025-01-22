@@ -42,9 +42,15 @@ public:
 
     /* delegators for
     cachevariables and sourcevariables */
+    /* Note: never directly call this function. */
+    UaStatus writeRotationalSpeedSetPoint ( const OpcUa_Double& v);
 
 
     /* delegators for methods */
+    UaStatus callSendJson (
+        const UaString&  jsonContent,
+        OpcUa_Boolean& returCode
+    ) ;
 
 private:
     /* Delete copy constructor and assignment operator */
@@ -60,6 +66,7 @@ public:
     void update();
 
 private:
+    
 
 
 
